@@ -1,0 +1,15 @@
+[project]
+name = "python-discord-webhook-app"
+version = "0.1.0"
+description = "Databricks Lakeflow Job 알림을 Discord 웹훅으로 중계하는 Azure Functinos 앱"
+authors = [
+    { name = "hellojin97", email = "ilhj1228@gmail.com" }
+]
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "azure-functions>=1.24.0",
+    "httpx>=0.28.1",
+]
+
+[tool.uv]
+package = false
