@@ -1,0 +1,60 @@
+name: Deploy Function
+
+on:
+    push:
+        branches: [main]
+        paths-ignore:
+            - "**.md"
+            - ".gitignore"
+    workflow_dispatch:
+
+permissions:
+    id-token: write
+    contents: read
+
+concurrency:
+    group: deploy-function
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        name: build & deploy
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            
+            - name: Install uv
+              uses: astral-sh/setup-uv@v3
+              with:
+                enable-cache: true
+            - name: Install Python (from .python-version)
+              run: uv python install
+            
+            - name: Install dependencies into .python_packages
+              run: |
+                uv export \
+                  --no-hashes \
+                  --no-emit-project \
+                  --frozen \
+                  --output-file requirements-deploy.txt
+                uv pip install \
+                  --python 3.11 \
+                  --target=".python_packages/lib/site-packages" \
+                  -r requirements-deploy.txt
+            
+            - name: Azure Login (OIDC)
+              uses: azure/login@v2
+              with:
+                client-id:       ${{ vars.AZURE_CLIENT_ID }}
+                tenant-id:       ${{ vars.AZURE_TENANT_ID }}
+                subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+            
+            - name: Deploy to Function App
+              uses: Azure/functions-action@v1
+              with:
+                app-name: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+                package: "."
+                scm-do-build-during-deployment: false
+                enable-oryx-build: false
