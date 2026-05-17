@@ -169,7 +169,36 @@ owner/repo 두 부분이 정확히 일치해야 함.
 
 `merge({EnableWorkerIndexing="..."}, var.app_settings)` 에서 **뒤 인자가 override**. 즉 caller가 `app_settings = { AzureWebJobsFeatureFlags = "Something" }` 박으면 모듈의 base를 덮어씀. 의도된 escape hatch지만, "절대 못 덮음"을 강제하려면 base를 뒤로 옮겨야 함 — 현재 정책은 명시적 override 허용.
 
-### 4-5. 인프라 → 코드 순서
+### 4-5. azure-infra CI 자동 apply는 새 required var를 모름
+
+PR #5 머지 직후 azure-infra의 `Terraform Apply` workflow가 자동으로 돌면서:
+
+```
+Error: No value for required variable
+  on variables.tf line 1:
+   1: variable "discord_webhook_url" {
+
+The root module input variable "discord_webhook_url" is not set
+```
+
+**원인:** `terraform-apply.yml`/`terraform-plan.yml`의 env 블록에 `ARM_*` 4개만 있고 `TF_VAR_discord_webhook_url`이 없음. 우리는 로컬에서 `TF_VAR_`로 주입했지만 CI는 그 값을 모름.
+
+**다행히 plan에서 fail → apply 미실행 → state 무변동.** 인프라는 안전했음.
+
+**해결 (azure-infra repo에 후속 PR):**
+
+1. `gh secret set TF_VAR_DISCORD_WEBHOOK_URL --repo hellojin97/azure-infra` (stdin으로 값 주입 — 셸 히스토리에 안 남음)
+2. 두 워크플로우 env 블록 끝에 한 줄씩 추가:
+   ```yaml
+   TF_VAR_discord_webhook_url: ${{ secrets.TF_VAR_DISCORD_WEBHOOK_URL }}
+   ```
+   ⚠️ 환경변수 이름은 **`TF_VAR_` + 소문자 변수명 그대로** — `TF_VAR_DISCORD_WEBHOOK_URL` 처럼 대문자로 박으면 Terraform 인식 못 함.
+
+**우회 금지:** `variable "discord_webhook_url" { default = "" }`로 fallback 두면 plan은 통과하지만 빈 값이 Function App `DISCORD_WEBHOOK_URL` App Setting을 덮어씌워 운영이 깨짐. 항상 명시적 주입.
+
+> 부수 사고: 처음에 `gh secret set ... --body '...URL...'\<newline>--repo ...` 형태로 입력했다가 backslash-newline이 quote 닫힘과 충돌 → `--body` 값에 `--repo`가 합쳐져 명령 실패. 그 과정에서 webhook URL이 채팅·셸 history에 평문으로 노출됨 → **Discord에서 즉시 회전 후 새 URL로 재박**. 비밀은 인자 위치/공백을 두 번 확인하거나 `gh secret set ...` 인자 없이 stdin prompt로 입력하는 게 안전.
+
+### 4-6. 인프라 → 코드 순서
 
 여전히 절대 원칙. 이번에 잘 지켰지만, 다음 변경 시(예: App Setting 추가)에도 같은 순서:
 1. `azure-infra` PR/apply → app_settings에 새 키 추가
