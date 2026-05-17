@@ -4,7 +4,6 @@
 .idea
 .venv
 .python-version
-.python_packages
 local.settings.json
 test
 tests
