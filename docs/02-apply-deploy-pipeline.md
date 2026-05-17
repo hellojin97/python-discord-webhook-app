@@ -98,16 +98,16 @@ app_settings = {
 
 ### A. 코드 repo 재구성 (이 repo)
 
-- [ ] `src/python_discord_webhook_app/` 제거 → root `function_app.py` 생성 (HTTP 트리거 `notify`)
-- [ ] 로직 패키지 `discord_relay/` 생성 (Lakeflow 페이로드 → Discord 임베드 변환)
-- [ ] `pyproject.toml`: `[build-system]`·`[project.scripts]` 제거, `[tool.uv] package=false`, `requires-python` 3.11로
-- [ ] `.python-version` → `3.11`
-- [ ] `uv add azure-functions httpx` → `uv.lock` 생성, commit
-- [ ] `host.json` 생성 (extensionBundle v4)
-- [ ] `.funcignore` 생성
-- [ ] `.gitignore`에 `.python_packages/` 추가
-- [ ] (로컬) `local.settings.json` 생성 — gitignore 확인됨 ✓
-- [ ] (로컬) `uv run func start` 로 `/api/notify` 동작 확인
+- [x] `src/python_discord_webhook_app/` 제거 → root `function_app.py` 생성 (HTTP 트리거 `notify`)
+- [x] 로직 패키지 `discord_relay/` 생성 (Lakeflow 페이로드 → Discord 임베드 변환)
+- [x] `pyproject.toml`: `[build-system]`·`[project.scripts]` 제거, `[tool.uv] package=false`, `requires-python` 3.11로
+- [x] `.python-version` → `3.11`
+- [x] `uv add azure-functions httpx` → `uv.lock` 생성, commit
+- [x] `host.json` 생성 (extensionBundle v4)
+- [x] `.funcignore` 생성
+- [x] `.gitignore`에 `.python_packages/` 추가
+- [x] (로컬) `local.settings.json` 생성 — gitignore 확인됨 ✓
+- [x] (로컬) `uv run func start` 로 `/api/notify` 동작 확인
 
 ### B. Azure / GitHub 사전 설정 (1회성)
 
